@@ -540,12 +540,30 @@ def BSDelView(request):
         book = request.GET.get('book', None)
     else:
         book = None
-       
     book = int(book)
-       
     bookshelf.objects.filter(user=request.user, book=book).delete()
-    
     return redirect("%s?searchtype=u"%reverse("web:searchbooks"))
+
+@vary_on_headers("HTTP_ACCEPT_LANGUAGE")
+@sopds_login(url='web:login')
+def BSSetPos(request,book_id):
+    if request.GET:
+        pos = request.GET.get('pos', None)
+    else:
+        pos = None
+    pos = float(pos)
+    bookshelf.objects.filter(user=request.user, book=book_id).update(position=pos)
+    response = HttpResponse()
+    response.write('OK')
+    return response
+
+@vary_on_headers("HTTP_ACCEPT_LANGUAGE")
+@sopds_login(url='web:login')
+def BSGetPos(request,book_id):
+    pos = bookshelf.objects.get(user=request.user, book=book_id).position
+    response = HttpResponse()
+    response.write(pos)
+    return response
 
 @vary_on_headers("HTTP_ACCEPT_LANGUAGE")
 @sopds_login(url='web:login')
@@ -599,3 +617,19 @@ def handler403(request,args):
     response = render(request, 'sopds_login.html', args)
     response.status_code = 403
     return response
+
+@vary_on_headers("HTTP_ACCEPT_LANGUAGE")
+@sopds_login(url='web:login')
+def LogoutView(request):
+    logout(request)
+    args = {}
+    args['breadcrumbs'] = [_('Logout')]
+    return redirect(reverse('web:main'))
+
+@sopds_login(url='web:login')
+def BookReaderView(request,book_id):
+    args = {}
+    args['current'] = 'reader
+    args['book_id'] = book_id
+    return render(request, 'sopds_reader.html', args)
+

@@ -18,4 +18,4 @@ def translit(s):
 
 def to_ascii(s):
     return s.encode('ascii', 'replace').decode('utf-8')
-
+

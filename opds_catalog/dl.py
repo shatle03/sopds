@@ -147,25 +147,25 @@ def Download(request, book_id, zip_flag):
         bookshelf.objects.get_or_create(user=request.user, book=book)
 
     full_path=os.path.join(config.SOPDS_ROOT_LIB,book.path)
-    
+
     if book.cat_type==opdsdb.CAT_INP:
         # Убираем из пути INPX и INP файл
         inp_path, zip_name = os.path.split(full_path)
         inpx_path, inp_name = os.path.split(inp_path)
         path, inpx_name = os.path.split(inpx_path)
         full_path = os.path.join(path,zip_name)
-        
+
     if config.SOPDS_TITLE_AS_FILENAME:
         transname=utils.translit(book.title+'.'+book.format)
     else:
         transname=utils.translit(book.filename)
-        
+
     transname = utils.to_ascii(transname)
-        
+
     if zip_flag == '1':
         dlfilename=transname+'.zip'   
         content_type= Mimetype.FB2_ZIP if book.format=='fb2' else Mimetype.ZIP
-    else:    
+    else:
         dlfilename=transname
         content_type = mime_detector.fmt(book.format)
 
@@ -203,7 +203,7 @@ def Download(request, book_id, zip_flag):
         zo.close()
         buf = dio.getvalue()
         response["Content-Length"] = str(len(buf))
-        response.write(buf)        
+        response.write(buf)
     else:
         response["Content-Length"] = str(book_size)
         response.write(s)
@@ -284,8 +284,8 @@ def Cover0(request, book_id, thumbnail = False):
         inpx_path, inp_name = os.path.split(inp_path)
         path, inpx_name = os.path.split(inpx_path)
         full_path = os.path.join(path,zip_name)
-         
-    if book.format=='fb2':        
+
+    if book.format=='fb2':
         fb2=fb2parse.fb2parser(1)
         if book.cat_type==opdsdb.CAT_NORMAL:
             file_path=os.path.join(full_path,book.filename)
@@ -337,7 +337,7 @@ def Thumbnail(request, book_id):
 def ConvertFB2(request, book_id, convert_type):
     """ Выдача файла книги после конвертации в EPUB или mobi """
     book = Book.objects.get(id=book_id)
-    
+
     if book.format!='fb2':
         raise Http404
 
@@ -351,17 +351,17 @@ def ConvertFB2(request, book_id, convert_type):
         inpx_path, inp_name = os.path.split(inp_path)
         path, inpx_name = os.path.split(inpx_path)
         full_path = os.path.join(path,zip_name)
-            
+
     if config.SOPDS_TITLE_AS_FILENAME:
         transname=utils.translit(book.title+'.'+book.format)
     else:
-        transname=utils.translit(book.filename)      
-        
+        transname=utils.translit(book.filename)
+
     transname = utils.to_ascii(transname)
-      
+ 
     (n,e)=os.path.splitext(transname)
     dlfilename="%s.%s"%(n,convert_type)
-    
+
     if convert_type=='epub':
         converter_path=config.SOPDS_FB2TOEPUB
     elif convert_type=='mobi':
@@ -375,12 +375,12 @@ def ConvertFB2(request, book_id, convert_type):
         try:
             fz=codecs.open(full_path, "rb")
         except FileNotFoundError:
-            raise Http404        
+            raise Http404
         z = zipfile.ZipFile(fz, 'r', allowZip64=True)
         z.extract(book.filename,config.SOPDS_TEMP_DIR)
         tmp_fb2_path=os.path.join(config.SOPDS_TEMP_DIR,book.filename)
-        file_path=tmp_fb2_path        
-        
+        file_path=tmp_fb2_path
+
     tmp_conv_path=os.path.join(config.SOPDS_TEMP_DIR,dlfilename)
     popen_args = ("\"%s\" \"%s\" \"%s\""%(converter_path,file_path,tmp_conv_path))
     proc = subprocess.Popen(popen_args, shell=True, stdout=subprocess.PIPE)
@@ -394,9 +394,9 @@ def ConvertFB2(request, book_id, convert_type):
         response = HttpResponse()
         response["Content-Type"]='%s; name="%s"'%(content_type,dlfilename)
         response["Content-Disposition"] = 'attachment; filename="%s"'%(dlfilename)
-        response["Content-Transfer-Encoding"]='binary'    
+        response["Content-Transfer-Encoding"]='binary'
         response["Content-Length"] = str(len(s))
-        response.write(s)         
+        response.write(s)
         fo.close()
     else:
         raise Http404
@@ -412,3 +412,70 @@ def ConvertFB2(request, book_id, convert_type):
         pass
 
     return response
+
+def ReadFB2(request, book_id):
+    """ Загрузка книги """
+    book = Book.objects.get(id=book_id)
+
+    if book.format!='fb2':
+        raise Http404
+
+    if config.SOPDS_AUTH and request.user.is_authenticated:
+	bookshelf.objects.get_or_create(user=request.user, book=book)
+
+    full_path=os.path.join(config.SOPDS_ROOT_LIB,book.path)
+    if book.cat_type==opdsdb.CAT_INP:
+        # Убираем из пути INPX и INP файл
+        inp_path, zip_name = os.path.split(full_path)
+        inpx_path, inp_name = os.path.split(inp_path)
+        path, inpx_name = os.path.split(inpx_path)
+        full_path = os.path.join(path,zip_name)
+
+    if config.SOPDS_TITLE_AS_FILENAME:
+        transname=utils.translit(book.title+'.'+book.format)
+    else:
+        transname=utils.translit(book.filename)
+
+    transname = utils.to_ascii(transname)
+
+    dlfilename=transname
+    content_type = mime_detector.fmt(book.format)
+
+    response = HttpResponse()
+    response["Content-Type"]='text/html; charset=utf-8'
+
+    z = None
+    fz = None
+    s = None
+    book_size = book.filesize
+    if book.cat_type==opdsdb.CAT_NORMAL:
+        file_path=os.path.join(full_path, book.filename)
+        book_size=os.path.getsize(file_path)
+        try:
+            fo=codecs.open(file_path, "rb")
+        except FileNotFoundError:
+            raise Http404
+        s=fo.read()
+    elif book.cat_type in [opdsdb.CAT_ZIP, opdsdb.CAT_INP]:
+        try:
+            fz=codecs.open(full_path, "rb")
+        except FileNotFoundError:
+            raise Http404
+        z = zipfile.ZipFile(fz, 'r', allowZip64=True)
+        book_size=z.getinfo(book.filename).file_size
+        fo= z.open(book.filename)
+
+    dom = ET.parse(fo)
+    xslt = ET.parse('%s/FB2_22_xhtml.xsl' % os.path.dirname(os.path.realpath(__file__)))
+    transform = ET.XSLT(xslt)
+    newdom = transform(dom)
+    book_content = ET.tostring(newdom, pretty_print=True)
+
+    response.write(book_content)
+
+    fo.close()
+    if z: z.close()
+    if fz: fz.close()
+
+    return response
+

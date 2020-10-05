@@ -629,7 +629,7 @@ def LogoutView(request):
 @sopds_login(url='web:login')
 def BookReaderView(request,book_id):
     args = {}
-    args['current'] = 'reader
+    args['current'] = 'reader'
     args['book_id'] = book_id
     return render(request, 'sopds_reader.html', args)
 

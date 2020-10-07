@@ -144,7 +144,8 @@ def Download(request, book_id, zip_flag):
     """ Загрузка файла книги """
     book = Book.objects.get(id=book_id)
 
-    if config.SOPDS_AUTH and request.user.is_authenticated:
+#    if config.SOPDS_AUTH and request.user.is_authenticated:
+    if request.user.is_authenticated:
         bookshelf.objects.get_or_create(user=request.user, book=book)
 
     full_path=os.path.join(config.SOPDS_ROOT_LIB,book.path)
@@ -342,7 +343,8 @@ def ConvertFB2(request, book_id, convert_type):
     if book.format!='fb2':
         raise Http404
 
-    if config.SOPDS_AUTH and request.user.is_authenticated:
+#    if config.SOPDS_AUTH and request.user.is_authenticated:
+    if request.user.is_authenticated:
         bookshelf.objects.get_or_create(user=request.user, book=book)
 
     full_path=os.path.join(config.SOPDS_ROOT_LIB,book.path)
@@ -421,7 +423,8 @@ def ReadFB2(request, book_id):
     if book.format!='fb2':
         raise Http404
 
-    if config.SOPDS_AUTH and request.user.is_authenticated:
+#    if config.SOPDS_AUTH and request.user.is_authenticated:
+    if request.user.is_authenticated:
         bookshelf.objects.get_or_create(user=request.user, book=book)
 
     full_path=os.path.join(config.SOPDS_ROOT_LIB,book.path)

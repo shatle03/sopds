@@ -13,7 +13,7 @@
     </div>
     
     <div class="top-bar-right">
-        {% if sopds_auth %}
+        {# {% if sopds_auth %} #}
         <ul class="menu" style="font-size:90%;">
             {% if user.is_authenticated %}
                 <li><a href="{% url "web:logout" %}"><i class="fi-torsos"></i>{% trans "Logout" %} ({{ user.username }})</a></li>
@@ -24,7 +24,7 @@
                 <li><a href="{% url "web:login" %}"><i class="fi-torsos"></i>{% trans "Login" %}</a></li>
             {% endif %}
         </ul>
-        {% endif %}
+        {# {% endif %} #}
     </div>
 
 </div>

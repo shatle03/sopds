@@ -103,6 +103,7 @@ class bookshelf(models.Model):
     user = models.ForeignKey(User, db_index=True, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, db_index=True, on_delete=models.CASCADE)
     readtime = models.DateTimeField(null=False, default=timezone.now, db_index=True)
+    position = models.FloatField(default=None, null=True)
 
 
 class CounterManager(models.Manager):
